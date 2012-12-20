@@ -29,8 +29,10 @@ class GearmanPeclManager extends GearmanManager {
     protected function start_lib_worker($worker_list) {
 
         $thisWorker = new GearmanWorker();
-
-        $thisWorker->addOptions(GEARMAN_WORKER_NON_BLOCKING);
+        
+        if(!empty($this->config['allow_nonblocking'])){
+            $thisWorker->addOptions(GEARMAN_WORKER_NON_BLOCKING);
+        }
 
         $thisWorker->setTimeout(5000);
 
@@ -50,7 +52,8 @@ class GearmanPeclManager extends GearmanManager {
 
             if(@$thisWorker->work() ||
                $thisWorker->returnCode() == GEARMAN_IO_WAIT ||
-               $thisWorker->returnCode() == GEARMAN_NO_JOBS) {
+               $thisWorker->returnCode() == GEARMAN_NO_JOBS || $thisWorker->returnCode() == 34 // for backward compatibility
+               ) {
 
                 if ($thisWorker->returnCode() == GEARMAN_SUCCESS) continue;
 
@@ -75,6 +78,9 @@ class GearmanPeclManager extends GearmanManager {
                 $this->log("Ran $this->job_execution_count jobs which is over the maximum({$this->config['max_runs_per_worker']}), exiting", GearmanManager::LOG_LEVEL_WORKER_INFO);
                 $this->stop_work = true;
             }
+            
+            // prevent from CPU loads
+            sleep(1);
 
         }
 
