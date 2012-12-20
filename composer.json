@@ -1,0 +1,9 @@
+{
+	"name":"ramunasd/GearmanManager",
+	"type":"library",
+	"description":"PHP daemon for managing gearman workers",
+	"keywords": ["php", "gearman", "daemon"],
+	"require": {
+		"php": ">=5.2.0"
+	}
+}
