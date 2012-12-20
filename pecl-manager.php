@@ -55,14 +55,13 @@ class GearmanPeclManager extends GearmanManager {
                $thisWorker->returnCode() == GEARMAN_NO_JOBS || $thisWorker->returnCode() == 34 // for backward compatibility
                ) {
 
-                if ($thisWorker->returnCode() == GEARMAN_SUCCESS) continue;
-
-                if (!@$thisWorker->wait()){
-                    if ($thisWorker->returnCode() == GEARMAN_NO_ACTIVE_FDS){
-                        sleep(5);
-                    }
+                if ($thisWorker->returnCode() == GEARMAN_SUCCESS){
+                    continue;
                 }
 
+                if (!@$thisWorker->wait()){
+                    sleep(1);
+                }
             }
 
             /**
@@ -71,22 +70,16 @@ class GearmanPeclManager extends GearmanManager {
              */
             if($this->max_run_time > 0 && time() - $start > $this->max_run_time) {
                 $this->log("Been running too long, exiting", GearmanManager::LOG_LEVEL_WORKER_INFO);
-                $this->stop_work = true;
+                break;
             }
 
             if(!empty($this->config["max_runs_per_worker"]) && $this->job_execution_count >= $this->config["max_runs_per_worker"]) {
                 $this->log("Ran $this->job_execution_count jobs which is over the maximum({$this->config['max_runs_per_worker']}), exiting", GearmanManager::LOG_LEVEL_WORKER_INFO);
-                $this->stop_work = true;
+                break;
             }
-            
-            // prevent from CPU loads
-            sleep(1);
-
         }
 
-        $thisWorker->unregisterAll();
-
-
+        @$thisWorker->unregisterAll();
     }
 
     /**
@@ -223,6 +216,3 @@ class GearmanPeclManager extends GearmanManager {
 }
 
 $mgr = new GearmanPeclManager();
-
-?>
-
