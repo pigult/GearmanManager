@@ -49,17 +49,20 @@ class GearmanPeclManager extends GearmanManager {
         $start = time();
 
         while(!$this->stop_work){
+            @$thisWorker->work();
+            $code = $thisWorker->returnCode();
+            if($code == GEARMAN_SUCCESS){
+                continue;
+            }
 
-            if(@$thisWorker->work() ||
-               $thisWorker->returnCode() == GEARMAN_IO_WAIT ||
-               $thisWorker->returnCode() == GEARMAN_NO_JOBS || $thisWorker->returnCode() == 34 // for backward compatibility
-               ) {
-
-                if ($thisWorker->returnCode() == GEARMAN_SUCCESS){
-                    continue;
-                }
-
-                if (!@$thisWorker->wait()){
+            if($code == GEARMAN_IO_WAIT || $code == GEARMAN_NO_JOBS || $code == 34){ // sometimes GEARMAN_NO_JOBS=35 for old gearman versions
+                if(!empty($this->config['allow_nonblocking'])){
+                    if(!@$thisWorker->wait()){
+                        if($thisWorker->returnCode() == GEARMAN_NO_ACTIVE_FDS){
+                            sleep(1);
+                        }
+                    }
+                }else{
                     sleep(1);
                 }
             }
