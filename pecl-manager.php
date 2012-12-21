@@ -57,13 +57,9 @@ class GearmanPeclManager extends GearmanManager {
 
             if($code == GEARMAN_IO_WAIT || $code == GEARMAN_NO_JOBS || $code == 34){ // sometimes GEARMAN_NO_JOBS=35 for old gearman versions
                 if(!empty($this->config['allow_nonblocking'])){
-                    if(!@$thisWorker->wait()){
-                        if($thisWorker->returnCode() == GEARMAN_NO_ACTIVE_FDS){
-                            sleep(1);
-                        }
+                    if(@$thisWorker->wait()){
+                        continue;
                     }
-                }else{
-                    sleep(1);
                 }
             }
 
@@ -80,6 +76,8 @@ class GearmanPeclManager extends GearmanManager {
                 $this->log("Ran $this->job_execution_count jobs which is over the maximum({$this->config['max_runs_per_worker']}), exiting", GearmanManager::LOG_LEVEL_WORKER_INFO);
                 break;
             }
+
+            sleep(1);
         }
 
         @$thisWorker->unregisterAll();
