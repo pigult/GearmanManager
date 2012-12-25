@@ -5,8 +5,6 @@ INIT_D=/etc/init.d/gearman-manager
 INSTALL_DIR=${PREFIX}/share/gearman-manager
 CONFIG_DIR=/etc/gearman-manager
 
-echo $DAEMON $INSTALL_DIR
-exit 
 # we're going to be mucking about, so we need to be root/sudo'd
 if [ "$(id -u)" != "0" ]; then
    echo "This script must be run as root" 1>&2
