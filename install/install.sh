@@ -1,10 +1,12 @@
 #!/bin/bash
-
-DAEMON=/usr/local/bin/gearman-manager
+[[ "${PREFIX}" == "" ]] && PREFIX=/usr/local
+DAEMON=${PREFIX}/bin/gearman-manager
 INIT_D=/etc/init.d/gearman-manager
-INSTALL_DIR=/usr/local/share/gearman-manager
+INSTALL_DIR=${PREFIX}/share/gearman-manager
 CONFIG_DIR=/etc/gearman-manager
 
+echo $DAEMON $INSTALL_DIR
+exit 
 # we're going to be mucking about, so we need to be root/sudo'd
 if [ "$(id -u)" != "0" ]; then
    echo "This script must be run as root" 1>&2
@@ -49,6 +51,8 @@ else
   cp ${WORKING_DIR}/${DISTRO}.sh ${WORKING_DIR}/${DISTRO}.build.sh
 fi
 
+# Use the proper prefix
+sed -i '' -e"s:##PREFIX##:${PREFIX}:" ${WORKING_DIR}/${DISTRO}.build.sh
 
 # symlink proper library wrapper into bin
 if [ -z "${PHPLIB}" ]; then
