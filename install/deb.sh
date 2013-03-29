@@ -13,7 +13,7 @@
 ### END INIT INFO
 
 ##PATH##
-DAEMON=/usr/local/bin/gearman-manager
+DAEMON=##PREFIX##/bin/gearman-manager
 PIDDIR=/var/run/gearman
 PIDFILE=${PIDDIR}/manager.pid
 LOGFILE=/var/log/gearman-manager.log

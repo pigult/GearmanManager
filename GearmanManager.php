@@ -84,6 +84,11 @@ abstract class GearmanManager {
     protected $stop_time = 0;
 
     /**
+     * Maximum time a child can run while restarting the daemon
+     */
+    protected $child_stop_timeout = 60;
+
+    /**
      * The filename to log to
      */
     protected $log_file;
@@ -303,7 +308,7 @@ abstract class GearmanManager {
         }
 
 
-        if($this->stop_work && time() - $this->stop_time > 60){
+        if($this->stop_work && time() - $this->stop_time > $this->child_stop_timeout){
             $this->log("Children have not exited, killing.", GearmanManager::LOG_LEVEL_PROC_INFO);
             $this->stop_children(SIGKILL);
         }
@@ -331,7 +336,7 @@ abstract class GearmanManager {
      */
     protected function getopt() {
 
-        $opts = getopt("ac:dD:h:Hl:o:p:P:u:v::w:r:x:Z");
+        $opts = getopt("ac:dD:h:Hl:o:p:P:u:v::w:r:x:Z:t");
 
         if(isset($opts["H"])){
             $this->show_help();
@@ -376,12 +381,20 @@ abstract class GearmanManager {
             $this->config['max_worker_lifetime'] = (int)$opts['x'];
         }
 
+        if (isset($opts['t'])) {
+            $this->config['child_stop_timeout'] = abs(intval($opts['t']));
+        }
+
         if (isset($opts['r'])) {
             $this->config['max_runs_per_worker'] = (int)$opts['r'];
         }
 
         if (isset($opts['D'])) {
             $this->config['count'] = (int)$opts['D'];
+        }
+
+        if (isset($opts['t'])) {
+            $this->config['timeout'] = $opts['t'];
         }
 
         if (isset($opts['h'])) {
@@ -530,6 +543,10 @@ abstract class GearmanManager {
             $this->config['exclude'] = array();
         }
 
+        if (!empty($this->config['child_stop_timeout'])) {
+            $this->child_stop_timeout = abs(intval($this->config['child_stop_timeout']));
+		}
+
         /**
          * Debug option to dump the config and exit
          */
@@ -567,7 +584,7 @@ abstract class GearmanManager {
 
         $this->log("Loading configuration from $file");
 
-        if(substr($file, -4) == ".php"){
+        if (substr($file, -4) == ".php"){
 
             require $file;
 
@@ -577,7 +594,7 @@ abstract class GearmanManager {
 
         }
 
-        if(empty($gearman_config)){
+        if (empty($gearman_config)){
             $this->show_help("No configuration found in $file");
         }
 
@@ -853,6 +870,16 @@ abstract class GearmanManager {
             $worker_list = array($worker);
         }
 
+        $timeouts = array();
+        $default_timeout = ((isset($this->config['timeout'])) ?
+            (int) $this->config['timeout'] : null);
+
+        // build up the list of worker timeouts
+        foreach ($worker_list as $worker) {
+            $timeouts[$worker] = ((isset($this->config['functions'][$worker]['timeout'])) ?
+                    (int) $this->config['functions'][$worker]['timeout'] : $default_timeout);
+        }
+
         $pid = pcntl_fork();
 
         switch($pid) {
@@ -874,7 +901,7 @@ abstract class GearmanManager {
                     uasort($worker_list, array($this, "sort_priority"));
                 }
 
-                $this->start_lib_worker($worker_list);
+                $this->start_lib_worker($worker_list, $timeouts);
 
                 $this->log("Child exiting", GearmanManager::LOG_LEVEL_WORKER_INFO);
 
@@ -1109,7 +1136,9 @@ abstract class GearmanManager {
         echo "  -v             Increase verbosity level by one\n";
         echo "  -w DIR         Directory where workers are located, defaults to ./workers. If you are using PECL, you can provide multiple directories separated by a comma.\n";
         echo "  -r NUMBER      Maximum job iterations per worker\n";
+        echo "  -t SECONDS     Maximum number of seconds gearmand server should wait for a worker to complete work before timing out and reissing work to another worker.\n";
         echo "  -x SECONDS     Maximum seconds for a worker to live\n";
+        echo "  -t SECONDS     Maximum time a child can run while restarting the daemon\n";
         echo "  -Z             Parse the command line and config file then dump it to the screen and exit.\n";
         echo "\n";
         exit();

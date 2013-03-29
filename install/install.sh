@@ -1,8 +1,8 @@
 #!/bin/bash
-
-DAEMON=/usr/local/bin/gearman-manager
+[[ "${PREFIX}" == "" ]] && PREFIX=/usr/local
+DAEMON=${PREFIX}/bin/gearman-manager
 INIT_D=/etc/init.d/gearman-manager
-INSTALL_DIR=/usr/local/share/gearman-manager
+INSTALL_DIR=${PREFIX}/share/gearman-manager
 CONFIG_DIR=/etc/gearman-manager
 
 # we're going to be mucking about, so we need to be root/sudo'd
@@ -49,6 +49,8 @@ else
   cp ${WORKING_DIR}/${DISTRO}.sh ${WORKING_DIR}/${DISTRO}.build.sh
 fi
 
+# Use the proper prefix
+sed -i '' -e"s:##PREFIX##:${PREFIX}:" ${WORKING_DIR}/${DISTRO}.build.sh
 
 # symlink proper library wrapper into bin
 if [ -z "${PHPLIB}" ]; then
