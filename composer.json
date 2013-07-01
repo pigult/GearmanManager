@@ -1,5 +1,5 @@
 {
-	"name":"donis/GearmanManager",
+	"name":"pigult/GearmanManager",
 	"type":"library",
 	"description":"PHP daemon for managing gearman workers",
 	"keywords": ["php", "gearman", "daemon"],
