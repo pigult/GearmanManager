@@ -39,7 +39,16 @@ class GearmanPeclManager extends GearmanManager {
 
         foreach($this->servers as $s){
             $this->log("Adding server $s", GearmanManager::LOG_LEVEL_WORKER_INFO);
-            $thisWorker->addServers($s);
+
+            // see: https://bugs.php.net/bug.php?id=63041
+            try {
+                $thisWorker->addServers($s);
+            } catch (\GearmanException $e) {
+                if ($e->getMessage() !== 'Failed to set exception option') {
+                    throw $e;
+                }
+            }
+
         }
 
         foreach($worker_list as $w){
@@ -107,7 +116,7 @@ class GearmanPeclManager extends GearmanManager {
             $func = $job_name;
         }
 
-        if(empty($objects[$job_name]) && !function_exists($func) && !class_exists($func)){
+        if(empty($objects[$job_name]) && !function_exists($func) && !class_exists($func, false)){
 
             if(!isset($this->functions[$job_name])){
                 $this->log("Function $func is not a registered job name");
